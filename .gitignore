@@ -1,0 +1,6 @@
+3rdparty/cef/
+Debug/
+*.sdf
+*.opensdf
+*.suo
+ipch/
