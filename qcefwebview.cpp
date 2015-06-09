@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "qcefwebview.h"
+#include "QCefClientHandler.h"
+#include "qcefmessageevent.h"
 
 const QString QCefWebView::kUrlBlank = "about:blank";
 
@@ -94,11 +96,11 @@ void QCefWebView::stop()
 	}
 }
 
-void QCefWebView::resizeEvent(QResizeEvent* event)
+void QCefWebView::resizeEvent(QResizeEvent* e)
 {
 	switch (browserState_) {
 		case kNone:
-			CreateBrowser(event->size());
+			CreateBrowser(e->size());
 			break;
 
 		case kCreating:
@@ -106,11 +108,111 @@ void QCefWebView::resizeEvent(QResizeEvent* event)
 			break;
 
 		default:
-			ResizeBrowser(event->size());
+			ResizeBrowser(e->size());
 	}
 }
 
-void QCefWebView::closeEvent(QCloseEvent* event)
+void QCefWebView::closeEvent(QCloseEvent* e)
 {
+	if (auto handlerInstance = QCefClientHandler::GetInstance()) {
+		if (handlerInstance->IsClosing()) {
+			auto browser = handlerInstance->GetBrowser();
+			if (browser.get()) {
+				browser->GetHost()->CloseBrowser(false);
+			}
+		}
+	}
+	e->accept();
+}
 
+void QCefWebView::showEvent(QShowEvent* /* e */)
+{
+	CreateBrowser(size());
+}
+
+void QCefWebView::customEvent(QEvent* e)
+{
+	//if (e->type() == QCefMessageEvent::MessageEventType) {
+	//	QCefMessageEvent * event = dynamic_cast<QCefMessageEvent*>(e);
+	//	QString name = event->name();
+	//	QVariantList args = event->args();
+
+	//	// TODO: emit something
+	//}
+}
+
+void QCefWebView::OnAddressChange(const QString& url)
+{
+	emit urlChanged(QUrl(url));
+}
+
+void QCefWebView::OnTitleChange(const QString& title)
+{
+	emit titleChanged(title);
+}
+
+void QCefWebView::SetLoading(bool isLoading)
+{
+	if (isLoading) {
+		if (!needLoad_ && !url_.isEmpty()) {
+			emit loadStarted();
+		}
+		else {
+			if (needLoad_) {
+				needLoad_ = false;
+			}
+			else if (!url_.isEmpty()) {
+				emit loadFinished(true);
+			}
+		}
+	}
+}
+
+void QCefWebView::SetNavState(bool canGoBack, bool canGoForward)
+{
+	emit navStateChanged(canGoBack, canGoForward);
+}
+
+void QCefWebView::OnAfterCreated()
+{
+	browserState_ = kCreated;
+	if (needResize_) {
+		ResizeBrowser(size());
+		needResize_ = false;
+	}
+}
+
+void QCefWebView::OnMessageEvent(QCefMessageEvent* e)
+{
+	QCoreApplication::postEvent(this, e, Qt::HighEventPriority);
+}
+
+bool QCefWebView::CreateBrowser(const QSize& size)
+{
+	if (browserState_ != kNone || size.isEmpty()) {
+		return false;
+	}
+
+	mutex_.lock();
+	if (browserState_ != kNone) {
+		mutex_.unlock();
+		return false;
+	}
+
+	RECT rect;
+	rect.left = 0;
+	rect.top = 0;
+	rect.right = size.width();
+	rect.bottom = size.height();
+	
+	CefWindowInfo windowInfo;
+	CefBrowserSettings browserSettings;
+
+#ifdef _WIN32
+	windowInfo.SetAsChild(reinterpret_cast<HWND>(this->winId()), rect);
+#else
+#error Implement getting window handler for other OSes!
+#endif
+
+	QCefClientHandler::GetInstance()->setListener(this);
 }
