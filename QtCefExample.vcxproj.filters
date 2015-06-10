@@ -53,16 +53,22 @@
     <ClCompile Include="qcefwebview.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_qcefwebview.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_qcefwebview.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
     <ClCompile Include="qcefmessageevent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="QCefClientHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="QCefClientApp.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="QCefClient.cpp">
+      <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="QCefClientHandlerWin.cpp">
+    <ClCompile Include="QCefClientApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -74,6 +80,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="qcefmessageevent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="QCefClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="QCefClientApp.h">
