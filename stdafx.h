@@ -4,6 +4,7 @@
 // STL
 
 #include <list>
+#include <set>
 #include <sstream>
 #include <string>
 

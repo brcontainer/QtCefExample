@@ -48,12 +48,12 @@ protected:
 	virtual void showEvent(QShowEvent * event) override;
 	virtual void customEvent(QEvent * event) override;
 
-	virtual void OnAddressChange(const QString & url);
-	virtual void OnTitleChange(const QString & title);
-	virtual void SetLoading(bool isLoading);
-	virtual void SetNavState(bool canGoBack, bool canGoForward);
-	virtual void OnAfterCreated();
-	virtual void OnMessageEvent(QCefMessageEvent * e);
+	virtual void OnAddressChange(const QString & url) override;
+	virtual void OnTitleChange(const QString & title) override;
+	virtual void SetLoading(bool isLoading) override;
+	virtual void SetNavState(bool canGoBack, bool canGoForward) override;
+	virtual void OnAfterCreated() override;
+	virtual void OnMessageEvent(QCefMessageEvent * e) override;
 
 private:
 	bool CreateBrowser(const QSize & size);

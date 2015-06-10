@@ -215,4 +215,62 @@ bool QCefWebView::CreateBrowser(const QSize& size)
 #endif
 
 	QCefClientHandler::GetInstance()->setListener(this);
+
+	QString url = url_.isEmpty() ? kUrlBlank : url_.toString();
+	CefBrowserHost::CreateBrowser(windowInfo,
+								  QCefClientHandler::GetInstance(),
+								  CefString(url.toStdWString()),
+								  browserSettings,
+								  nullptr);
+	browserState_ = kCreating;
+	mutex_.unlock();
+	
+	return true;
+}
+
+CefRefPtr<CefBrowser> QCefWebView::GetBrowser() const
+{
+	CefRefPtr<CefBrowser> browser = nullptr;
+	if (QCefClientHandler::GetInstance()) {
+		browser = QCefClientHandler::GetInstance()->GetBrowser();
+	}
+
+	return browser;
+}
+
+void QCefWebView::ResizeBrowser(const QSize& size)
+{
+	if (QCefClientHandler::GetInstance()) {
+		if (QCefClientHandler::GetInstance()->GetBrowser()) {
+			auto windowHandle = 
+				QCefClientHandler::GetInstance()->GetBrowser()->GetHost()->GetWindowHandle();
+
+			if (windowHandle) {
+#ifdef _WIN32
+				auto hdwp = BeginDeferWindowPos(1);
+				hdwp = DeferWindowPos(hdwp,
+									  windowHandle,
+									  nullptr,
+									  0,
+									  0,
+									  size.width(),
+									  size.height(),
+									  SWP_NOZORDER);
+				EndDeferWindowPos(hdwp);
+#else
+#error Implement for other OSes!
+#endif
+			}
+		}
+	}
+}
+
+bool QCefWebView::BrowserLoadUrl(const QUrl& url)
+{
+	if (!url.isEmpty() && GetBrowser()) {
+		CefString cefurl(url_.toString().toStdWString());
+		GetBrowser()->GetMainFrame()->LoadURL(cefurl);
+		return true;
+	}
+	return false;
 }

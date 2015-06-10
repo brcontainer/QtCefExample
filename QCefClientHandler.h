@@ -9,6 +9,25 @@ class QCefClientHandler :
 	public CefLoadHandler
 {
 public:
+	class ProcessMessageDelegate : public virtual CefBase
+	{
+	public:
+		// Called when a process message is received. Return true if the message was
+		// handled and should not be passed on to other handlers.
+		// ProcessMessageDelegates should check for unique message names to avoid
+		// interfering with each other.
+		virtual bool OnProcessMessageReceived(
+			CefRefPtr<QCefClientHandler> handler,
+			CefRefPtr<CefBrowser> browser,
+			CefProcessId source_process,
+			CefRefPtr<CefProcessMessage> message)
+		{
+			return false;
+		}
+	};
+
+	typedef std::set<CefRefPtr<ProcessMessageDelegate>> ProcessMessageDelegateSet;
+
 	class Listener
 	{
 	public:
@@ -38,6 +57,22 @@ public:
 		return this;
 	}
 	
+// overridden methods
+public:
+	virtual void OnAfterCreated(CefRefPtr<CefBrowser> browser) OVERRIDE;
+	virtual bool DoClose(CefRefPtr<CefBrowser> browser) OVERRIDE;
+	virtual void OnBeforeClose(CefRefPtr<CefBrowser> browser) OVERRIDE;
+	virtual void OnLoadError(CefRefPtr<CefBrowser> browser,
+							 CefRefPtr<CefFrame> frame,
+							 ErrorCode errorCode,
+							 const CefString& errorText,
+							 const CefString& failedUrl) OVERRIDE;
+	
+	void CloseAllBrowsers(bool force_close);
+
+// getters and setters
+public:
+
 	bool IsClosing() const
 	{
 		return isClosing_; 
@@ -57,6 +92,20 @@ public:
 		return listener_;
 	}
 
+protected:
+	void SetLoading(bool isLoading);
+	void SetNavState(bool canGoBack, bool canGoForward);
+
+	// child browser window
+	CefRefPtr<CefBrowser> Browser_;
+
+	// list of any popup browser windows, only accessed on CEF UI thread
+	typedef std::list<CefRefPtr<CefBrowser>> BrowserList;
+	BrowserList popupBrowsers_;
+
+	// Create all of ProcessMessageDelegate objects.
+	static void CreateProcessMessageDelegates(ProcessMessageDelegateSet& delegates);
+
 private:
 	typedef std::list<CefRefPtr<CefBrowser>> BrowserList;
 	BrowserList browserList_;
@@ -68,6 +117,9 @@ private:
 
 	// Listener interface
 	Listener* listener_;
+
+	// Startup URL
+	std::string startupUrl_;
 
 	IMPLEMENT_REFCOUNTING(QCefClientHandler);
 };

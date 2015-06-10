@@ -96,6 +96,7 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="QCefClientHandler.cpp" />
+    <ClCompile Include="qcefmessageevent.cpp" />
     <ClCompile Include="qcefwebview.cpp" />
     <ClCompile Include="qtcefexample.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -125,6 +126,7 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp" "-fstdafx.h" "-f../../qcefwebview.h"  -DUNICODE -DWIN32 -DWIN64 -DQT_DLL -DQT_NO_DEBUG -DNDEBUG -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB "-I.\GeneratedFiles" "-I." "-I$(QTDIR)\include" "-I.\GeneratedFiles\$(ConfigurationName)\." "-I$(QTDIR)\include\QtCore" "-I$(QTDIR)\include\QtGui" "-I$(QTDIR)\include\QtWidgets" "-IC:\Program Files (x86)\Visual Leak Detector\include"</Command>
     </CustomBuild>
     <ClInclude Include="QCefClientHandler.h" />
+    <ClInclude Include="qcefmessageevent.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
