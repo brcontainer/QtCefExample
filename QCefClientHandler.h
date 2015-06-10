@@ -9,25 +9,6 @@ class QCefClientHandler :
 	public CefLoadHandler
 {
 public:
-	class ProcessMessageDelegate : public virtual CefBase
-	{
-	public:
-		// Called when a process message is received. Return true if the message was
-		// handled and should not be passed on to other handlers.
-		// ProcessMessageDelegates should check for unique message names to avoid
-		// interfering with each other.
-		virtual bool OnProcessMessageReceived(
-			CefRefPtr<QCefClientHandler> handler,
-			CefRefPtr<CefBrowser> browser,
-			CefProcessId source_process,
-			CefRefPtr<CefProcessMessage> message)
-		{
-			return false;
-		}
-	};
-
-	typedef std::set<CefRefPtr<ProcessMessageDelegate>> ProcessMessageDelegateSet;
-
 	class Listener
 	{
 	public:
@@ -43,8 +24,6 @@ public:
 
 	QCefClientHandler();
 	virtual ~QCefClientHandler();
-
-	static QCefClientHandler * GetInstance();
 
 	// CefClient methods
 	virtual CefRefPtr<CefDisplayHandler> GetDisplayHandler() OVERRIDE{
@@ -103,12 +82,13 @@ protected:
 	typedef std::list<CefRefPtr<CefBrowser>> BrowserList;
 	BrowserList popupBrowsers_;
 
-	// Create all of ProcessMessageDelegate objects.
-	static void CreateProcessMessageDelegates(ProcessMessageDelegateSet& delegates);
+	// Number of currently existing browser windows. The application will exit
+	// when the number of windows reaches 0.
+	static int browserCount_;
 
 private:
-	typedef std::list<CefRefPtr<CefBrowser>> BrowserList;
-	BrowserList browserList_;
+	//typedef std::list<CefRefPtr<CefBrowser>> BrowserList;
+	//BrowserList browserList_;
 
 	bool isClosing_;
 
@@ -120,6 +100,9 @@ private:
 
 	// Startup URL
 	std::string startupUrl_;
+
+	// The child browser id
+	int browserId_;
 
 	IMPLEMENT_REFCOUNTING(QCefClientHandler);
 };

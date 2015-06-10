@@ -2,64 +2,82 @@
 #include "QCefClientHandler.h"
 #include "qcefmessageevent.h"
 
-namespace
-{
-	QCefClientHandler * g_instance = nullptr;
-}
+int QCefClientHandler::browserCount_ = 0;
 
 QCefClientHandler::QCefClientHandler() :
-	isClosing_(false)
+	isClosing_(false),
+	browserId_(0)
 {
-	g_instance = this;
-
 	if (startupUrl_.empty()) {
-		startupUrl_ = "about:blank";
+		startupUrl_ = "https://www.google.com";
 	}
 }
 
 QCefClientHandler::~QCefClientHandler()
 {
-	g_instance = nullptr;
-}
-
-// static
-QCefClientHandler * QCefClientHandler::GetInstance()
-{
-	return g_instance;
 }
 
 void QCefClientHandler::OnAfterCreated(CefRefPtr<CefBrowser> browser)
 {
 	CEF_REQUIRE_UI_THREAD();
 
-	browserList_.push_back(browser);
+	if (!browser_.get()) {
+		// We need to keep the main child window, but not popup windows
+		browser_ = browser;
+		browserId_ = browser->GetIdentifier();
+		if (listener_) {
+			listener_->OnAfterCreated();
+		}
+	}
+	else if (browser->IsPopup()) {
+		// add to the list of popup browsers
+		popupBrowsers_.push_back(browser);
+	}
+
+	browserCount_++;
 }
 
 bool QCefClientHandler::DoClose(CefRefPtr<CefBrowser> browser)
 {
 	CEF_REQUIRE_UI_THREAD();
 
-	if (browserList_.size() == 1) {
+	// Closing the main window requires special handling. See the DoClose()
+	// documentation in the CEF header for a detailed destription of this
+	// process.
+	if (browserId_ == browser->GetIdentifier()) {
+		// Notify the browser that the parent window is about to close.
+		// browser->GetHost()->ParentWindowWillClose();
+
+		// Set a flag to indicate that the window close should be allowed.
 		isClosing_ = true;
 	}
 
-	return true;
+	// Allow the close. For windowed browsers this will result in the OS close
+	// event being sent.
+	return false;
 }
 
 void QCefClientHandler::OnBeforeClose(CefRefPtr<CefBrowser> browser)
 {
 	CEF_REQUIRE_UI_THREAD();
 
-	BrowserList::iterator bit = browserList_.begin();
-	for (; bit != browserList_.end(); ++bit) {
-		if ((*bit)->IsSame(browser)) {
-			browserList_.erase(bit);
-			break;
+	if (browserId_ == browser->GetIdentifier()) {
+		// Free the browser pointer so that the browser can be destroyed
+		browser_ = nullptr;
+	}
+	else if (browser->IsPopup()) {
+		// Remove from the browser popup list.
+		BrowserList::iterator bit = popupBrowsers_.begin();
+		for (; bit != popupBrowsers_.end(); ++bit) {
+			if ((*bit)->IsSame(browser)) {
+				popupBrowsers_.erase(bit);
+				break;
+			}
 		}
 	}
 
-	if (browserList_.empty()) {
-		CefQuitMessageLoop();
+	if (--browserCount_ == 0) {
+		// NotifyAllBrowsersClosed();
 	}
 }
 
@@ -93,16 +111,17 @@ void QCefClientHandler::CloseAllBrowsers(bool force_close)
 		return;
 	}
 
-	if (browserList_.empty())
+	if (!popupBrowsers_.empty()) {
+		// Request that any popup browsers close.
+		BrowserList::const_iterator it = popupBrowsers_.begin();
+		for (; it != popupBrowsers_.end(); ++it) {
+			(*it)->GetHost()->CloseBrowser(force_close);
+		}
 		return;
+	}
 
-	BrowserList::const_iterator it = browserList_.begin();
-	for (; it != browserList_.end(); ++it)
-		(*it)->GetHost()->CloseBrowser(force_close);
-}
-
-// static
-void QCefClientHandler::CreateProcessMessageDelegates(ProcessMessageDelegateSet& delegates)
-{
-	client_binding::CreateProcessMessageDelegates(delegates);
+	if (browser_.get()) {
+		// Request that the main browser close.
+		browser_->GetHost()->CloseBrowser(force_close);
+	}
 }
