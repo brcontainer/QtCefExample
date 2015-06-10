@@ -1,109 +1,64 @@
 #pragma once
 
-#include "qcefmessageevent.h"
+#ifndef QCEFCLIENTHANDLER_H
+#define QCEFCLIENTHANDLER_H
 
-class QCefClientHandler :
-	public CefClient,
+class QCefClientHandler : public CefClient,
 	public CefDisplayHandler,
 	public CefLifeSpanHandler,
 	public CefLoadHandler
 {
 public:
-	class Listener
-	{
-	public:
-		virtual ~Listener() {};
-
-		virtual void OnAddressChange(const QString & url) = 0;
-		virtual void OnTitleChange(const QString & title) = 0;
-		virtual void SetLoading(bool isLoading) = 0;
-		virtual void SetNavState(bool canGoBack, bool canGoForward) = 0;
-		virtual void OnAfterCreated() = 0;
-		virtual void OnMessageEvent(QCefMessageEvent * e) = 0;
-	};
-
 	QCefClientHandler();
-	virtual ~QCefClientHandler();
+	~QCefClientHandler();
 
-	// CefClient methods
+	// Provide access to the single global instance of this object.
+	static QCefClientHandler* GetInstance();
+
+	// CefClient methods:
 	virtual CefRefPtr<CefDisplayHandler> GetDisplayHandler() OVERRIDE{
 		return this;
 	}
-	virtual CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() OVERRIDE{
+		virtual CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() OVERRIDE{
 		return this;
 	}
-	virtual CefRefPtr<CefLoadHandler> GetLoadHandler() OVERRIDE{
+		virtual CefRefPtr<CefLoadHandler> GetLoadHandler() OVERRIDE{
 		return this;
 	}
-	
-// overridden methods
-public:
+
+		// CefDisplayHandler methods:
+		virtual void OnTitleChange(CefRefPtr<CefBrowser> browser,
+		const CefString& title) OVERRIDE;
+
+	// CefLifeSpanHandler methods:
 	virtual void OnAfterCreated(CefRefPtr<CefBrowser> browser) OVERRIDE;
 	virtual bool DoClose(CefRefPtr<CefBrowser> browser) OVERRIDE;
 	virtual void OnBeforeClose(CefRefPtr<CefBrowser> browser) OVERRIDE;
+
+	// CefLoadHandler methods:
 	virtual void OnLoadError(CefRefPtr<CefBrowser> browser,
 							 CefRefPtr<CefFrame> frame,
 							 ErrorCode errorCode,
 							 const CefString& errorText,
 							 const CefString& failedUrl) OVERRIDE;
-	
-	void CloseAllBrowsers(bool force_close);
 
-// getters and setters
-public:
+	// Request that all existing browser windows close.
+	void CloseAllBrowsers(bool force_close);
 
 	bool IsClosing() const
 	{
-		return isClosing_; 
-	};
-
-	CefRefPtr<CefBrowser> GetBrowser()
-	{
-		return browser_;
+		return is_closing_;
 	}
-
-	void setListener(Listener* listener)
-	{
-		listener_ = listener;
-	}
-	Listener* listener() const
-	{
-		return listener_;
-	}
-
-protected:
-	void SetLoading(bool isLoading);
-	void SetNavState(bool canGoBack, bool canGoForward);
-
-	// child browser window
-	CefRefPtr<CefBrowser> Browser_;
-
-	// list of any popup browser windows, only accessed on CEF UI thread
-	typedef std::list<CefRefPtr<CefBrowser>> BrowserList;
-	BrowserList popupBrowsers_;
-
-	// Number of currently existing browser windows. The application will exit
-	// when the number of windows reaches 0.
-	static int browserCount_;
 
 private:
-	//typedef std::list<CefRefPtr<CefBrowser>> BrowserList;
-	//BrowserList browserList_;
+	// List of existing browser windows. Only accessed on the CEF UI thread.
+	typedef std::list<CefRefPtr<CefBrowser> > BrowserList;
+	BrowserList browser_list_;
 
-	bool isClosing_;
+	bool is_closing_;
 
-	// The child browser window
-	CefRefPtr<CefBrowser> browser_;
-
-	// Listener interface
-	Listener* listener_;
-
-	// Startup URL
-	std::string startupUrl_;
-
-	// The child browser id
-	int browserId_;
-
+	// Include the default reference counting implementation.
 	IMPLEMENT_REFCOUNTING(QCefClientHandler);
 };
 
+#endif // QCEFCLIENTHANDLER_H
