@@ -3,23 +3,55 @@
 #include "QCefClient.h"
 #include "qcefwebview.h"
 
-int main(int argc, char *argv[])
+#include <iostream>
+
+bool IsSubprocess(int & argc, char ** argv)
 {
-	QApplication a(argc, argv);
+	std::vector<std::string> argVector(argv, argv + argc);
 
-
-	int result = QCefInit(argc, argv);
-	if (result >= 0) {
-		return result;
+	for (auto i = 0; i < argc; ++i) {
+		if (argVector[i].find("--type") != std::string::npos) {
+			return true;
+		}
 	}
 
-	QtCefExample w;
-	w.resize(800, 600);
+	return false;
+}
 
-	QCefWebView * cefWebView = new QCefWebView(&w);
-	w.setCentralWidget(cefWebView);
+int RunCefSubprocess(int & argc, char ** argv)
+{
+	CefMainArgs cefMainArgs(GetModuleHandle(nullptr));
 
-	w.show();
+	return CefExecuteProcess(cefMainArgs, nullptr, nullptr);
+}
 
-	return a.exec();
+
+int main(int argc, char *argv[])
+{
+	if (IsSubprocess(argc, argv)) {
+		std::cout << "subprocess" << std::endl;
+		return RunCefSubprocess(argc, argv);
+	}
+	else {
+		QApplication a(argc, argv);
+
+		int result = QCefInit(argc, argv);
+		if (result >= 0) {
+			return result;
+		}
+
+		QtCefExample w;
+		w.resize(1024, 768);
+
+		QCefWebView * cefWebView = new QCefWebView(&w);
+		w.setCentralWidget(cefWebView);
+
+		w.show();
+
+		int qt_exit_code = a.exec();
+		
+		QCefQuit();
+		
+		return qt_exit_code;
+	}
 }

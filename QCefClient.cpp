@@ -27,6 +27,11 @@ int QCefInit(int& argc, char** argv)
 	CefMainArgs mainArgs(hInstance);
 	CefRefPtr<QCefClientApp> app(new QCefClientApp);
 
+	int exit_code = CefExecuteProcess(mainArgs, app.get(), nullptr);
+	if (exit_code >= 0) {
+		return exit_code;
+	}
+
 	CefSettings settings;
 	QCefInitSettings(settings);
 
