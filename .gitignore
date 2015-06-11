@@ -4,3 +4,6 @@ Debug/
 *.opensdf
 *.suo
 ipch/
+GeneratedFiles/
+Release/
+debug.log

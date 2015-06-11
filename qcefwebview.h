@@ -1,9 +1,12 @@
 #ifndef QCEFWEBVIEW_H
 #define QCEFWEBVIEW_H
 
-#include <QWidget>
+#include "qcefclienthandler.h"
+#include "qcefmessageevent.h"
 
-class QCefWebView : public QWidget
+class QCefWebView : 
+	public QWidget,
+	public QCefClientHandler::Listener
 {
 	Q_OBJECT
 
@@ -45,12 +48,12 @@ protected:
 	virtual void showEvent(QShowEvent * event) override;
 	virtual void customEvent(QEvent * event) override;
 
-	virtual void OnAddressChange(const QString & url);
-	virtual void OnTitleChange(const QString & title);
-	virtual void SetLoading(bool isLoading);
-	virtual void SetNavState(bool canGoBack, bool canGoForward);
-	virtual void OnAfterCreated();
-	// virtual void OnMessageEvent(MessageEvent * e);
+	virtual void OnAddressChange(const QString & url) override;
+	virtual void OnTitleChange(const QString & title) override;
+	virtual void SetLoading(bool isLoading) override;
+	virtual void SetNavState(bool canGoBack, bool canGoForward) override;
+	virtual void OnAfterCreated() override;
+	virtual void OnMessageEvent(QCefMessageEvent * e) override;
 
 private:
 	bool CreateBrowser(const QSize & size);
